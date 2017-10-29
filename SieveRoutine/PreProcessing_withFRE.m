@@ -123,11 +123,14 @@ while undone
 end
 
 % do reduction
-I_nonzero   = I(:, m + 1);
-undeleted   = undeleted + constr_fre;
-undeleted   = find(undeleted);
-info.n_post = n_fre + nnz(I_nonzero);
-info.m_post = length(undeleted);
+I_nonzero      = I(:, m + 1);
+info.nonzero   = [ones(n_fre, 1); I_nonzero];
+undeleted      = undeleted + constr_fre;
+info.undeleted = sparse(logical(undeleted));
+undeleted      = find(undeleted);
+info.n_post    = n_fre + nnz(I_nonzero);
+info.m_post    = length(undeleted);
+
 if (info.n_post < n) || (info.m_post < m)
     info.reduction = 1;
     for ii = 1:info.m_post

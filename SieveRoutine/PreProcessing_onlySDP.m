@@ -136,10 +136,12 @@ while undone
 end
 
 % Do reduction
-I_nonzero   = I(:, m + 1);    % The variables remain in the problem.
-undeleted   = constr_indices; % The constraints remain in the problem.
-info.n_post = nnz(I_nonzero);
-info.m_post = constr_num;
+I_nonzero      = I(:, m + 1);    % The variables remain in the problem.
+info.nonzero   = I_nonzero;
+info.undeleted = sparse(logical(undeleted));
+undeleted      = constr_indices; % The constraints remain in the problem.
+info.n_post    = nnz(I_nonzero);
+info.m_post    = constr_num;
 
 % Check if there is any reduction.
 if (info.n_post < n) || (info.m_post < m)

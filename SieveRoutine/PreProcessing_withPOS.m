@@ -214,11 +214,13 @@ while undone
 end
 
 % do reduction
-Ipos_nonzero = Ipos(:, m + 1);
-I_nonzero    = I(:, m + 1);
-undeleted    = constr_indices;
-info.n_post  = nnz(Ipos_nonzero) + nnz(I_nonzero);
-info.m_post  = constr_num;
+Ipos_nonzero   = Ipos(:, m + 1);
+I_nonzero      = I(:, m + 1);
+info.nonzero   = [Ipos_nonzero; I_nonzero];
+info.undeleted = sparse(logical(undeleted));
+undeleted      = constr_indices;
+info.n_post    = nnz(Ipos_nonzero) + nnz(I_nonzero);
+info.m_post    = constr_num;
 if (info.n_post < n) || (info.m_post < m)
     info.reduction = 1;
     A_pos = A_pos(Ipos_nonzero, undeleted);
