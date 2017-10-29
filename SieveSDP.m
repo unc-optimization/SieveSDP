@@ -1,11 +1,17 @@
 function [probr, info] = SieveSDP(prob, option)
 % Purpose: SieveSDP is a preprocessing routine for semidefinite programming
-% ...
+% 	min. <C, X>
+%   s.t. <Ai, X> == bi (i = 1, ..., m)
+%              X >= 0
+% where X >= 0 means that X is in PSD cone. X may also include linear free
+% variables and linear nonnegative variables.
+%
 % Inputs: 
 %      prob: This variable takes Mosek format. It is a structure and 
 %            has 9 fields: bardim, c, barc, a, bara, blc, buc, blx, bux,
 %            where blc = buc; blx has entries -inf or 0; bux = [].
-%            For detail, see e.g. http://docs.mosek.com/8.1/toolbox/tutorial-sdo-shared.html
+%            For detail, see e.g. Section 9.7 of
+%            http://docs.mosek.com/7.0/toolbox/A_guided_tour.html
 %   options: It is a structure containing three fiels: 
 %            maxiter, epsilon, cholEPS.
 %            The default values are: 
@@ -17,10 +23,12 @@ function [probr, info] = SieveSDP(prob, option)
 %      info: This is a structure containing the information about the
 %            preproessing.
 %     > info has fields:
-%                   info.n_pre
-%                   info.m_pre
-%                   info.n_post (if not infeasible)
-%                   info.m_post (if not infeasible)
+%                   info.n_pre (order of X, i.e., sum of number of linear variables and orders of psd blocks)
+%                   info.n_post (order of X_reduced, if not infeasible)
+%                   info.m_pre (number of constraints)
+%                   info.m_post (number of constraints in reduced problem, if not infeasible)
+%                   info.nonzero (indices of nonzero rows/columns of X IN BINARY, if not infeasible)
+%                   info.undeleted (indices of undeleted constraints IN BINARY, if not infeasible)
 %                   info.infeasible (= 0 or 1)
 %                   info.reduction  (= 0 or 1)
 %                   info.time_preprocessing
@@ -31,9 +39,9 @@ function [probr, info] = SieveSDP(prob, option)
 %    Operations Research, UNC-Chapel Hill.
 %    Joint work with Gabor Pataki and Quoc Tran Dinh, UNC-Chapel Hill.
 %    Created date: August 31, 2017.
-%    Last modified: September 5, 2017.
+%    Last modified: October 28, 2017.
 %    Contact: zyzx@live.unc.edu
-%    More information: http://...
+%    More information: https://arxiv.org/pdf/1710.08954.pdf
 
 if nargin < 2
    option.maxiter = intmax;
@@ -85,7 +93,7 @@ info.time_total = toc(time_total);
 
 end
 
-% SeiveSDP v.1.0 by Melody Zhu, Gabor Pataki and Quoc Tran-Dinh.
+% SeiveSDP v.1.0 by Yuzixuan Zhu, Gabor Pataki and Quoc Tran-Dinh.
 % Copyright 2017 Department of Statistics and Operations Research
 %                UNC - Chapel Hill, USA.
 % See the file LICENSE for full license information.
