@@ -5,7 +5,7 @@ SieveSDP ([1]) is a preprocessing algorithm for semidefinite programming of the 
 where K is the direct product of R^p, R^q_+ and S^r_+ (Euclidean space, nonnegative orthant, and positive semidefinite cone). For detail of using the code, call
 	>> help SieveSDP
 
-To test a problem in our datasets, go to folder “test examples”. There are 21 datasets saved as .zip files. After unzipping a dataset, you may see one or more SDP problems consisted in this dataset and saved as .mat files. They are in (Matlab-based) Mosek input format ([2, Section 9.7]).
+To test a problem in our datasets, go to folder “test examples”. There are 20 datasets saved as .zip files. After unzipping a dataset, you may see one or more SDP problems consisted in this dataset and saved as .mat files. They are in (Matlab-based) Mosek input format ([2, Section 9.7]).
 
 To load a problem ``Example1.mat”in Matlab, call
 	>> prob = load(``path/Example1.mat”);
