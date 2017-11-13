@@ -25,6 +25,8 @@ info.m_pre = m;
 % Convert c
 c_pos = prob.c;
 len = length(prob.barc.val);
+subk  = zeros(1, len);
+subl  = zeros(1, len);
 val = prob.barc.val;
 for j = 1:len
     addterm              = Aind(prob.barc.subj(j));
