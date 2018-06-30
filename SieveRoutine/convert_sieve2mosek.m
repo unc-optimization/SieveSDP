@@ -1,19 +1,20 @@
 % Get the orders of sdp variables
-nj  = zeros(1, n_sdp);
+nj = zeros(1, n_sdp);
 for j = 1:n_sdp
     nj(j) = nnz(I_nonzero((Aind(j) + 1):Aind(j + 1)));
 end
-nj           = nj(nj > 0);
-probr.bardim = nj;
-n_sdp        = length(nj);
-Aind         = zeros(1, n_sdp + 1);
+nj            = nj(nj > 0);
+probr.bardim  = nj;
+n_sdp         = length(nj);
+Aind          = zeros(1, n_sdp + 1);
 for j = 1:n_sdp
     Aind(j + 1) = Aind(j) + nj(j);
 end
+info.n_post.s = probr.bardim;
 
 % Convert c
 if n_pos > 0
-    probr.c = c_pos;
+    probr.c = [prob.c(1:n_fre); c_pos];
 else
     probr.c = prob.c;
 end
@@ -45,24 +46,24 @@ probr.buc = probr.blc;
 
 % Convert A
 if n_pos > 0
-    probr.a = A_pos';
+    probr.a = [prob.a(undeleted, 1:n_fre), A_pos'];
 else
     probr.a = prob.a(undeleted, :);
 end
-subi    = cell(1, info.m_post);
-subj    = cell(1, info.m_post);
-subk    = cell(1, info.m_post);
-subl    = cell(1, info.m_post);
-val     = cell(1, info.m_post);
+subi = cell(1, info.m_post);
+subj = cell(1, info.m_post);
+subk = cell(1, info.m_post);
+subl = cell(1, info.m_post);
+val  = cell(1, info.m_post);
 for ii = 1:info.m_post
     i = undeleted(ii);
     [row, col, v] = find(tril(A_convert{i}));
-    count    = length(v);
-    subi{ii} = ii*ones(1, count);
-    subj{ii} = zeros(1, count);
-    subk{ii} = zeros(1, count);
-    subl{ii} = zeros(1, count);
-    val{ii}  = v';
+    count         = length(v);
+    subi{ii}      = ii*ones(1, count);
+    subj{ii}      = zeros(1, count);
+    subk{ii}      = zeros(1, count);
+    subl{ii}      = zeros(1, count);
+    val{ii}       = v';
     k = 1;
     for vv = 1:count
         for j = k:n_sdp
@@ -81,13 +82,8 @@ probr.bara.subl = horzcat(subl{1:info.m_post});
 probr.bara.val  = horzcat(val{1:info.m_post});
 
 % Convert x
-if n_fre == 0
-    if n_pos == 0
-        probr.blx = [];
-    else
-        probr.blx = zeros(1, nnz(Ipos_nonzero));
-    end
-else
-    probr.blx = -inf(1, n_fre);
+probr.blx = -inf(1, n_fre);
+if n_pos > 0
+    probr.blx = [probr.blx, zeros(1, nnz(Ipos_nonzero))];
 end
 probr.bux = [];

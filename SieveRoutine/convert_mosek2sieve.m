@@ -19,19 +19,21 @@ for j = 1:n_sdp
     Aind(j + 1) = Aind(j) + nj(j);
 end
 
-info.n_pre = n;
-info.m_pre = m;
+info.n_pre.f = n_fre;
+info.n_pre.l = n_pos;
+info.n_pre.s = prob.bardim;
+info.m_pre   = m;
 
 % Convert c
-c_pos = prob.c;
-len = length(prob.barc.val);
+c_pos = prob.c((n_fre + 1):(n_fre + n_pos));
+len   = length(prob.barc.val);
 subk  = zeros(1, len);
 subl  = zeros(1, len);
-val = prob.barc.val;
+val   = prob.barc.val;
 for j = 1:len
-    addterm              = Aind(prob.barc.subj(j));
-    subk(j)    = prob.barc.subk(j) + addterm;
-    subl(j)    = prob.barc.subl(j) + addterm;
+    addterm = Aind(prob.barc.subj(j));
+    subk(j) = prob.barc.subk(j) + addterm;
+    subl(j) = prob.barc.subl(j) + addterm;
     if prob.barc.subk(j) == prob.barc.subl(j)
         val(j) = val(j)/2;
     end
@@ -42,7 +44,7 @@ val       = [val, val];
 c_convert = sparse(subk1, subl1, val, n_sdp_sum, n_sdp_sum);
 
 % Convert A
-A_pos      = prob.a';
+A_pos      = prob.a(:, (n_fre + 1):(n_fre + n_pos))';
 A_convert  = cell(m, 1);
 [C, ia, ~] = unique(prob.bara.subi);
 len        = length(C);
@@ -61,22 +63,13 @@ for i = 1:len
            val(j) = val(j)/2;
        end
     end
-    subik1 = [subik, subil];
-    subil1 = [subil, subik];
-    val    = [val, val];
+    subik1          = [subik, subil];
+    subil1          = [subil, subik];
+    val             = [val, val];
     A_convert{C(i)} = sparse(subik1, subil1, val, n_sdp_sum, n_sdp_sum);
 end
 for i = 1:m
    if isempty(A_convert{i})
        A_convert{i} = sparse(n_sdp_sum, n_sdp_sum);
    end
-end
-
-% Convert b
-I           = find(b > 0);
-b(I)        = -b(I);
-A_pos(:, I) = -A_pos(:, I);
-len = length(I);
-for i = 1:len
-    A_convert{I(i)} = -A_convert{I(i)};
 end

@@ -5,6 +5,26 @@ convert_mosek2sieve;
 
 time_preprocessing = tic;
 
+% information for dual recovery
+if option.DR == 1
+    info.DR.A_convert = A_convert;	% record A_convert
+    info.DR.A_fre     = prob.a(:, 1:n_fre)';
+    info.DR.c_convert = c_convert;
+    info.DR.c_fre     = prob.c(1:n_fre);
+    info.DR.indices   = sparse(false(n_sdp_sum, m));  % record faces
+    info.DR.pd        = ones(m, 1);     % 1 if deleted constraint is pd, -1 if nd
+    info.DR.constr    = zeros(m, 1);    % the order when constraints are deleted
+    j                 = 0;    % count iteration for facial reduction
+end
+
+% make b negative
+neg    = find(b > 0);
+b(neg) = -b(neg);
+len    = length(neg);
+for i = 1:len
+    A_convert{neg(i)} = -A_convert{neg(i)};
+end
+
 % initial nonzero indices of each constraint matrix
 I = true(n_sdp_sum, m + 1);
 for i = 1:m
@@ -12,12 +32,13 @@ for i = 1:m
 end
 I = sparse(I);
 
-undeleted       = ones(m, 1);    % Keep track of which constraints are deleted
+constr_fre      = any(prob.a, 2);
+undeleted       = ~constr_fre;	% Keep track of which constraints are deleted
 undone          = 1;    % undone = 1 means that it still needs (re-)preprocessing
 info.infeasible = 0;    % 1 means that we have found infeasibility, 0 o/w
 info.reduction  = 0;    % 1 means that we have found reduction, 0 o/w
-constr_indices  = (1:m);
-constr_num      = m;
+constr_indices  = find(undeleted);
+constr_num      = length(constr_indices);
 iter            = 0;
 cholEPS         = option.cholEPS;
 bn              = -option.sqrtEPS*max(1, norm(b, inf)); % b < 0 if b < -sqrt(eps)*max{1, ||b||}
@@ -44,6 +65,7 @@ while undone
         if isempty(At)  % if Ai = 0 and bi < 0, then infeasible
             if b(i) < bn
                 info.infeasible         = 1;
+                info.iter               = iter;
                 info.time_preprocessing = toc(time_preprocessing);
                 return;
             end
@@ -63,18 +85,24 @@ while undone
             end
             if pd_check == 0    % Ai pd and bi < 0, then infeasible
                 info.infeasible         = 1;
+                info.iter               = iter;
                 info.time_preprocessing = toc(time_preprocessing);
                 return;
             end
         % Delete the rows and columns of the constraints.
         else
-            if b(i) > bz % meaning b(i) == 0.
+            if b(i) > bz    % meaning b(i) == 0.
                 if cholEPS > 0
                     [~, pd_check] = chol(At - cholEPS*eye(size(At, 1)));
                 else
                     [~, pd_check] = chol(At);
                 end
                 if pd_check == 0    % if Ai pd and bi = 0, then delete rows/columns
+                    if option.DR == 1
+                        j                     = j + 1;
+                        info.DR.constr(j)     = i;
+                        info.DR.indices(:, j) = I(:, i);
+                    end
                     I(I(:, i), :) = false;
                     undeleted(i)  = 0;  % also remove this constraint.
                     undone        = 1;
@@ -85,8 +113,14 @@ while undone
                         [~, nd_check] = chol(-At);
                     end
                     if nd_check == 0  % if Ai nd and bi = 0, then delete rows/columns
+                        if option.DR == 1
+                            j                     = j + 1;
+                            info.DR.constr(j)     = i;
+                            info.DR.indices(:, j) = I(:, i);
+                            info.DR.pd(j)         = -1; % this constraint was nd, now it is pd
+                        end
                         I(I(:, i), :) = false;
-                        undeleted(i)  = 0;   % also remove this constraint.
+                        undeleted(i)  = 0;  % also remove this constraint.
                         undone        = 1;
                     end
                 end
@@ -117,6 +151,7 @@ while undone
             if isempty(At)
                 if b(i) < bn
                     info.infeasible         = 1;
+                    info.iter               = iter;
                     info.time_preprocessing = toc(time_preprocessing);
                     return;
                 end
@@ -134,26 +169,43 @@ while undone
     end
     
 end
+info.iter = iter;
+
+% reverse signs
+b(neg) = -b(neg);
+for i = 1:len
+    A_convert{neg(i)} = -A_convert{neg(i)};
+end
 
 % Do reduction
-I_nonzero      = I(:, m + 1);    % The variables remain in the problem.
+I_nonzero      = I(:, m + 1);    % The variables remained in the problem.
 info.nonzero   = I_nonzero;
+undeleted      = undeleted + constr_fre;   % The constraints remained in the problem.
 info.undeleted = sparse(logical(undeleted));
-undeleted      = constr_indices; % The constraints remain in the problem.
-info.n_post    = nnz(I_nonzero);
-info.m_post    = constr_num;
+undeleted      = find(undeleted);
+
+info.n_post.f = n_fre;
+info.n_post.l = 0;
+info.m_post   = length(undeleted);
+
+if option.DR == 1
+    info.DR.constr  = info.DR.constr(1:j);
+    info.DR.indices = info.DR.indices(:, 1:j);
+    info.DR.pd      = info.DR.pd(1:j);
+end
 
 % Check if there is any reduction.
-if (info.n_post < n) || (info.m_post < m)
+if info.m_post < m
     info.reduction = 1;
     % Reduce the size of the problem.
-    for ii = 1:constr_num
+    for ii = 1:info.m_post
         i            = undeleted(ii);
         A_convert{i} = A_convert{i}(I_nonzero, I_nonzero);
     end
     c_convert = c_convert(I_nonzero, I_nonzero);
 else
     probr                   = prob;
+    info.n_post.s           = info.n_pre.s;
     info.time_preprocessing = toc(time_preprocessing);
     return;
 end
