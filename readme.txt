@@ -1,48 +1,86 @@
-SieveSDP ([1]) is a preprocessing algorithm for semidefinite programming of the form
+Sieve-SDP ([1]) is a preprocessing algorithm for semidefinite programming of the form
+
 	min. <C, X>
 	s.t. A(X) == b
 	     X in K
-where K is the direct product of R^p, R^q_+ and S^r_+ (Euclidean space, nonnegative orthant, and positive semidefinite cones). For detail of using the code, call
+
+where K is the direct product of R^p, R^q_+ and S^r_+ (Euclidean space, nonnegative orthant, and positive semidefinite cones). For detail, call
+
 	>> help SieveSDP;
-	
+
+
+
+******* HOW TO USE SIEVE-SDP TO DO REDUCTION *******
+
 To preprocess a problem using SieveSDP, call
+
 	>> [probr, info] = SieveSDP(prob);
 
-To test a problem in our datasets, go to folder “test examples”. There are 20 datasets saved as .zip files. After unzipping a dataset, you may see one or more SDP problems consisted in this dataset and saved as .mat files. They are in (Matlab-based) Mosek input format ([2, Section 9.7]).
+If info.infeasible == 1, then problem is infeasible. Otherwise, to solve a reduced problem by Mosek, call
+
+	>> [rcode, res] = mosekopt(‘minimize’, prob);
+
+The problem solution is saved in ‘res’, c.f. [2].
+
+
+
+******* HOW TO RECOVER ORIGINAL SOLUTION ******
+
+If solution of original (before-preprocessed) problem is desired, call
+
+	>> [x_original, X_original] = recoveryPrimal(res, info);
+
+where ‘info’ is given from the call to SieveSDP, ‘x_original’ corresponds to linear variables, and ‘X_original’ corresponds to PSD variables.
+
+If solution of original dual problem
+
+	max. <b, y>
+	s.t. A^* (y) + Z = C
+	     Z in K^*
+
+is desired, set
+
+	>> option.DR = 1;
+
+and call SieveSDP by
+
+	>> [probr, info] = SieveSDP(prob, option);
+
+After solving the problem by Mosek, call
+
+	[y_original, z_original, Z_original, info1] = recoveryDual(res, info);
+
+Dual recovery may not always succeed ([5]). Its success status is saved in ‘info1’.
+
+
+
+******* HOW TO FORMULATE A PROBLEM *******
+
+To test a problem in our datasets, go to folder “test examples”. There are 20 datasets saved as .zip files. After unzipping a dataset, you will see SDP problems saved as .mat files. Sources of these problem sets are listed in [1]. They are in (Matlab-based) Mosek Matlab format ([2, Section 9.7]).
 
 To load a problem ``Example1.mat”in Matlab, call
-	>> prob = load(``path/Example1.mat”);
 
-To solve this problem using Mosek in Matlab, call
-	>> [rcode, res] = mosekopt(``minimize info”, prob);
+	>> prob = load(‘path/Example1.mat’);
 
-To convert this problem to other formats supported by Mosek, e.g., Task format, in order to run it outside of Matlab (see [3]), call
-	>> mosekopt(['min write(‘, path, ‘/Example1.task.gz)'], prob);
+To convert a problem to different formats supported by Mosek, e.g., Task format, in order to run it outside of Matlab ([3]), call
+
+	>> mosekopt(['min write(Example1.task.gz)'], prob);
 
 To convert a problem from other formats supported by Mosek, e.g. Task format, call
-	>> [~, res] = mosekopt(['read(', path, ‘/Example1.task.gz)']);
+
+	>> [~, res] = mosekopt(['read(Example1.task.gz)']);
 	>> prob = res.prob;
 
-To convert this problem to SeDuMi format ([4]) in Matlab, call
+To convert a problem from Mosek format to SeDuMi format ([4]), call
+
 	>> [A, b, c, K] = convert_mosek2sedumi(prob);
 
-To convert a problem from SeDuMi format, call
+To convert a problem from SeDuMi format to Mosek format, call
+
 	>> prob = convert_sedumi2mosek(A, b, c, K);
 
-Some notes about solution recovery after solving the reduced problem:
-To recover original solution X_original from X_reduced, call
-	>> X_original = zeros(n, n);
-	>> X_original(info.nonzero, info.nonzero) = X_reduced;
-where n is the order of X, and info.nonzero is an output of SieveSDP. This recovery is accurate.
 
-The dual problem is
-	max. <b, y>
-	s.t. A^* (y) <= C
-To recover original solution y_original from y_reduced, call
-	>> y_original = zeros(m, 1);
-	>> y_original(info.undeleted) = y_reduced;
-where m is the length of y, and info.undeleted is an output of SieveSDP. This recovery may be infeasible for badly-behaved SDPs ([5]). We are currently developing more accurate dual recovery code.
-	
+
 [1] Y. Zhu, G. Pataki, TD Quoc. Sieve-SDP: a simple facial reduction algorithm to preprocess semidefinite programs. https://arxiv.org/pdf/1710.08954.pdf
 [2] http://docs.mosek.com/7.0/toolbox/A_guided_tour.html
 [3] http://docs.mosek.com/8.1/matlabfusion/supported-file-formats.html
