@@ -30,7 +30,7 @@ for v = 1:num
     end
 end
 c = sparse(loc, ones(num, 1), val, Ainds(end), 1);
-c = [prob.c; c];
+c = sparse([prob.c; c]);
 
 % Convert A
 subi = [prob.bara.subi, prob.bara.subi];
@@ -47,6 +47,6 @@ for v = 1:num
     end
 end
 A = sparse(loc, subi, val, Ainds(end), m);
-A = [prob.a'; A];
+A = sparse([prob.a'; A]);
 
 end
