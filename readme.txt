@@ -62,7 +62,7 @@ Dual recovery may not always succeed ([5]). Its success status is saved in ‘in
 
 ———-
 
-[1] Y. Zhu, G. Pataki, TD Quoc. Sieve-SDP: a simple facial reduction algorithm to preprocess semidefinite programs. https://arxiv.org/pdf/1710.08954.pdf
+[1] Y. Zhu, G. Pataki, TD Quoc. Sieve-SDP: a simple facial reduction algorithm to preprocess semidefinite programs. Mathematical Programming Computation 11.3 (2019): 503-586.
 [2] http://docs.mosek.com/7.0/toolbox/A_guided_tour.html
 [3] http://docs.mosek.com/8.1/matlabfusion/supported-file-formats.html
 [4] http://sedumi.ie.lehigh.edu/sedumi/files/sedumi-downloads/SeDuMi_Guide_11.pdf
