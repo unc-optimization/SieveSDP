@@ -54,7 +54,7 @@ function [probr, info] = SieveSDP(prob, option)
 %   Department of Statistics and Operations Research, UNC-Chapel Hill.
 %   Created date: August 31, 2017.
 %   Last modified: January 25, 2018.
-%   Contact: zyzx@live.unc.edu
+%   Contact: zhu.17@foxmail.com, quoctd@email.unc.edu, or gabor@unc.edu
 %   More information: https://arxiv.org/pdf/1710.08954.pdf
 
 if nargin < 2
