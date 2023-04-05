@@ -28,6 +28,14 @@ else
     K.l = 0;
 end
 
+% Get the orders of quadratic variables
+n_quad = 0;
+if isfield(K, 'q') && ~isempty(K.q) && (K.q(1) > 0)
+    n_quad = sum(K.q);
+else
+    K.q = 0;
+end
+
 % Get the orders of SDP variables
 if isfield(K, 's') && ~isempty(K.s) && (K.s(1) > 0)
     nj = K.s;
@@ -45,8 +53,8 @@ end
 prob.bardim = nj;
 
 % Convert c
-prob.c = c(1:(n_fre + n_pos));
-c(1:(n_fre + n_pos)) = [];
+prob.c = c(1:(n_fre + n_pos + n_quad));
+c(1:(n_fre + n_pos + n_quad)) = [];
 I = find(c);
 count = length(I);
 subj = zeros(1, count);
@@ -96,8 +104,8 @@ prob.blc = b;
 prob.buc = prob.blc;
 
 % Convert A
-prob.a = A(1:(n_fre + n_pos), :)';
-A(1:(n_fre + n_pos), :) = [];
+prob.a = A(1:(n_fre + n_pos + n_quad), :)';
+A(1:(n_fre + n_pos + n_quad), :) = [];
 subi = cell(1, m);
 subj = cell(1, m);
 subk = cell(1, m);
@@ -154,6 +162,14 @@ prob.bara.subk = horzcat(subk{1:m});
 prob.bara.subl = horzcat(subl{1:m});
 prob.bara.val = full(horzcat(val{1:m}));
 
+% Quadratic cones
+if n_quad > 0
+    prob.cones.type   = zeros(1, length(K.q));
+    csq = 1 + cumsum([0; K.q]);
+    prob.cones.sub = n_fre + n_pos + (1:n_quad);
+    prob.cones.subptr = csq(1:end-1)';
+end
+
 % Convert x
-prob.blx = [-inf(1, n_fre), zeros(1, n_pos)];
-prob.bux = [];
+prob.blx = [-inf(1, n_fre), zeros(1, n_pos), -inf(1, n_quad)];
+prob.bux = inf(1, n_fre + n_pos + n_quad);
